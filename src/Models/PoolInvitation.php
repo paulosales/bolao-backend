@@ -8,7 +8,7 @@ class PoolInvitation extends BaseModel
     public function findByToken(string $token): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT pi.*, p.name as pool_name, p.quota_value, p.estimated_prize, u.name as inviter_name
+            'SELECT pi.*, p.name as pool_name, p.code as pool_code, u.name as inviter_name
              FROM pool_invitations pi
              JOIN pools p ON p.id = pi.pool_id
              JOIN users u ON u.id = pi.invited_by
@@ -34,14 +34,13 @@ class PoolInvitation extends BaseModel
     public function create(array $data): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO pool_invitations (pool_id, invited_by, email, phone, token, sent_via, expires_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)'
+            'INSERT INTO pool_invitations (pool_id, invited_by, email, token, sent_via, expires_at)
+             VALUES (?, ?, ?, ?, ?, ?)'
         );
         $stmt->execute([
             $data['pool_id'],
             $data['invited_by'],
             $data['email'] ?? null,
-            $data['phone'] ?? null,
             $data['token'],
             $data['sent_via'],
             $data['expires_at'] ?? null,

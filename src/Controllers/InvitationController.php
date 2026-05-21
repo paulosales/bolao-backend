@@ -124,9 +124,23 @@ class InvitationController
         }
 
         $rules = $this->ruleModel->findByPool((int)$invitation['pool_id']);
-        $invitation['rules'] = $rules;
 
-        return $this->json($response, ['invitation' => $invitation]);
+        return $this->json($response, [
+            'pool' => [
+                'id'   => (string) $invitation['pool_id'],
+                'name' => $invitation['pool_name'],
+                'code' => $invitation['pool_code'],
+            ],
+            'rules' => [
+                'exact_score_points'     => (int) ($rules['exact_score_points'] ?? 0),
+                'one_team_score_points'  => (int) ($rules['one_team_score_points'] ?? 0),
+                'draw_points'            => (int) ($rules['draw_points'] ?? 0),
+                'goal_difference_points' => (int) ($rules['goal_difference_points'] ?? 0),
+                'description'            => $rules['description'] ?? null,
+            ],
+            'inviter_name'  => $invitation['inviter_name'],
+            'invitee_email' => $invitation['email'],
+        ]);
     }
 
     public function accept(Request $request, Response $response, array $args): Response
