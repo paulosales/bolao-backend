@@ -20,6 +20,14 @@ class AuthMiddleware implements MiddlewareInterface
     {
         $authHeader = $request->getHeaderLine('Authorization');
 
+        // Some web servers (Apache mod_rewrite, certain Nginx configs) strip the
+        // Authorization header before it reaches PHP. Fall back to $_SERVER.
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION']
+                ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+                ?? '';
+        }
+
         if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {
             return $this->unauthorizedResponse('Token de autenticação não fornecido.');
         }
