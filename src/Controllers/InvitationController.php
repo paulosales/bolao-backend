@@ -176,7 +176,11 @@ class InvitationController
         // Find or create user
         $user = $this->userModel->findByEmail($email);
 
-        if (!$user) {
+        if ($user) {
+            if (!password_verify($password, $user['password_hash'])) {
+                return $this->error($response, 'Senha incorreta.', 401);
+            }
+        } else {
             $userId = $this->userModel->create([
                 'name'          => $name,
                 'email'         => $email,
@@ -199,6 +203,30 @@ class InvitationController
 
         unset($user['password_hash']);
         return $this->json($response, ['user' => $user, 'token' => $token, 'pool_id' => $poolId]);
+    }
+
+    public function join(Request $request, Response $response, array $args): Response
+    {
+        $userId     = (int) $request->getAttribute('auth_user_id');
+        $token      = $args['token'];
+        $invitation = $this->invitationModel->findByToken($token);
+
+        if (!$invitation) {
+            return $this->error($response, 'Convite não encontrado.', 404);
+        }
+        if ($invitation['status'] !== 'pending') {
+            return $this->error($response, 'Este convite já foi utilizado ou cancelado.', 410);
+        }
+        if ($invitation['expires_at'] && strtotime($invitation['expires_at']) < time()) {
+            return $this->error($response, 'Este convite expirou.', 410);
+        }
+
+        $poolId = (int) $invitation['pool_id'];
+
+        $this->memberModel->add($poolId, $userId);
+        $this->invitationModel->updateStatus((int) $invitation['id'], 'accepted');
+
+        return $this->json($response, ['pool_id' => $poolId]);
     }
 
     public function cancel(Request $request, Response $response, array $args): Response

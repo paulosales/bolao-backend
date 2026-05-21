@@ -56,6 +56,7 @@ return function (App $app) {
         $group->get('/pools/{id}/invitations', [InvitationController::class, 'index']);
         $group->post('/pools/{id}/invitations', [InvitationController::class, 'create']);
         $group->post('/pools/{id}/invitations/link', [InvitationController::class, 'generateLink']);
+        $group->post('/invitations/{token}/join', [InvitationController::class, 'join']);
         $group->delete('/invitations/{invitationId}', [InvitationController::class, 'cancel']);
 
         // Bets
