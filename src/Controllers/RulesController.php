@@ -51,6 +51,7 @@ class RulesController
             'one_team_score_points'   => (int)$data['one_team_score_points'],
             'draw_points'             => (int)$data['draw_points'],
             'goal_difference_points'  => (int)$data['goal_difference_points'],
+            'description'             => isset($data['description']) && $data['description'] !== '' ? (string)$data['description'] : null,
         ]);
 
         $rules = $this->ruleModel->findByPool($poolId);

@@ -29,7 +29,8 @@ class PoolRule extends BaseModel
              exact_score_points = ?,
              one_team_score_points = ?,
              draw_points = ?,
-             goal_difference_points = ?
+             goal_difference_points = ?,
+             description = ?
              WHERE pool_id = ?'
         );
         return $stmt->execute([
@@ -37,6 +38,7 @@ class PoolRule extends BaseModel
             $data['one_team_score_points'],
             $data['draw_points'],
             $data['goal_difference_points'],
+            $data['description'] ?? null,
             $poolId,
         ]);
     }

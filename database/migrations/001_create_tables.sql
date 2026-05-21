@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS pool_rules (
     one_team_score_points    TINYINT UNSIGNED NOT NULL DEFAULT 5,
     draw_points              TINYINT UNSIGNED NOT NULL DEFAULT 3,
     goal_difference_points   TINYINT UNSIGNED NOT NULL DEFAULT 2,
+    description              TEXT             NULL,
     UNIQUE KEY uq_rules_pool (pool_id),
     CONSTRAINT fk_rules_pool FOREIGN KEY (pool_id) REFERENCES pools(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
