@@ -20,8 +20,14 @@ class RulesController
 
     public function show(Request $request, Response $response, array $args): Response
     {
+        $userId = (int) $request->getAttribute('auth_user_id');
         $poolId = (int) $args['id'];
-        $rules  = $this->ruleModel->findByPool($poolId);
+
+        if (!$this->memberModel->find($poolId, $userId)) {
+            return $this->error($response, 'Você não é participante deste bolão.', 403);
+        }
+
+        $rules = $this->ruleModel->findByPool($poolId);
         if (!$rules) {
             return $this->error($response, 'Regras não encontradas.', 404);
         }
