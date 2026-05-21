@@ -1,0 +1,17 @@
+# Ignore Composer vendor directory
+/vendor/
+
+# Environment files
+.env
+.env.*
+
+# Logs, cache and temporary files
+/storage/
+logs/
+cache/
+tmp/
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
