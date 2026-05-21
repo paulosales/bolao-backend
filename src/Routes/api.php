@@ -13,13 +13,13 @@ use Slim\App;
 use Slim\Routing\RouteCollectorProxy;
 
 return function (App $app) {
-    $app->get('/info', function ($request, $response) {
-        $response->getBody()->write(json_encode(['message' => 'Bem-vindo à API do Bolão da Copa!']));
-        return $response->withHeader('Content-Type', 'application/json');
-    });
-
     // Public routes (no auth)
     $app->group('/api', function (RouteCollectorProxy $group) {
+        $group->get('/info', function ($request, $response) {
+            $response->getBody()->write(json_encode(['message' => 'Bem-vindo à API do Bolão da Copa!']));
+            return $response->withHeader('Content-Type', 'application/json');
+        });
+
         // Auth
         $group->post('/auth/register', [AuthController::class, 'register']);
         $group->post('/auth/login', [AuthController::class, 'login']);
