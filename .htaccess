@@ -6,15 +6,12 @@ deny from all
 </Files>
 
 <IfModule mod_rewrite.c>
-  RewriteEngine On
-
-  # Preserve Authorization header before any [L] rule stops processing
-  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization},L]
-
   # Redirect to the public folder
+  RewriteEngine On
   # RewriteBase /
   RewriteRule ^$ public/ [L]
   RewriteRule (.*) public/$1 [L]
+  RewriteRule .* - [env=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
   # Redirect to HTTPS
   # RewriteEngine On
