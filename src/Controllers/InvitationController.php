@@ -9,7 +9,6 @@ use App\Models\PoolMember;
 use App\Models\PoolRule;
 use App\Models\User;
 use App\Services\EmailService;
-use App\Services\SmsService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Ramsey\Uuid\Uuid;
@@ -22,8 +21,7 @@ class InvitationController
         private PoolMember $memberModel,
         private PoolRule $ruleModel,
         private User $userModel,
-        private EmailService $emailService,
-        private SmsService $smsService
+        private EmailService $emailService
     ) {
     }
 
@@ -53,13 +51,11 @@ class InvitationController
 
         $data    = (array) $request->getParsedBody();
         $email   = trim(strtolower($data['email'] ?? ''));
-        $phone   = trim($data['phone'] ?? '');
-        $sentVia = $data['sent_via'] ?? 'email';
 
-        if (empty($email) && empty($phone)) {
-            return $this->error($response, 'E-mail ou telefone é obrigatório.', 422);
+        if (empty($email)) {
+            return $this->error($response, 'E-mail é obrigatório.', 422);
         }
-        if (!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->error($response, 'E-mail inválido.', 422);
         }
 
@@ -71,21 +67,14 @@ class InvitationController
         $this->invitationModel->create([
             'pool_id'    => $poolId,
             'invited_by' => $userId,
-            'email'      => $email ?: null,
-            'phone'      => $phone ?: null,
+            'email'      => $email,
             'token'      => $token,
-            'sent_via'   => $sentVia,
+            'sent_via'   => 'email',
             'expires_at' => $expiresAt,
         ]);
 
-        $inviterName = $this->userModel->findById($userId)['name'] ?? '';
-
-        if ($sentVia === 'email' && !empty($email)) {
-            $toName = explode('@', $email)[0];
-            $this->emailService->sendInvite($email, $toName, $pool['name'], $link);
-        } elseif ($sentVia === 'sms' && !empty($phone)) {
-            $this->smsService->sendInvite($phone, $pool['name'], $link);
-        }
+        $toName = explode('@', $email)[0];
+        $this->emailService->sendInvite($email, $toName, $pool['name'], $link);
 
         return $this->json($response, ['link' => $link, 'token' => $token], 201);
     }
@@ -101,8 +90,6 @@ class InvitationController
         }
 
         $data  = (array) $request->getParsedBody();
-        $email = trim(strtolower($data['email'] ?? ''));
-        $phone = trim($data['phone'] ?? '');
 
         $token     = Uuid::uuid4()->toString();
         $expiresAt = date('Y-m-d H:i:s', strtotime('+30 days'));
@@ -112,8 +99,7 @@ class InvitationController
         $this->invitationModel->create([
             'pool_id'    => $poolId,
             'invited_by' => $userId,
-            'email'      => $email ?: null,
-            'phone'      => $phone ?: null,
+            'email'      => null,
             'token'      => $token,
             'sent_via'   => 'link',
             'expires_at' => $expiresAt,
@@ -161,30 +147,25 @@ class InvitationController
         $data     = (array) $request->getParsedBody();
         $name     = trim($data['name'] ?? '');
         $email    = trim(strtolower($data['email'] ?? ''));
-        $phone    = trim($data['phone'] ?? '');
         $password = $data['password'] ?? '';
 
         if (empty($name) || empty($password)) {
             return $this->error($response, 'Nome e senha são obrigatórios.', 422);
         }
-        if (empty($email) && empty($phone)) {
-            return $this->error($response, 'E-mail ou telefone é obrigatório.', 422);
+        if (empty($email)) {
+            return $this->error($response, 'E-mail é obrigatório.', 422);
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->error($response, 'E-mail inválido.', 422);
         }
 
         // Find or create user
-        $user = null;
-        if (!empty($email)) {
-            $user = $this->userModel->findByEmail($email);
-        }
-        if (!$user && !empty($phone)) {
-            $user = $this->userModel->findByPhone($phone);
-        }
+        $user = $this->userModel->findByEmail($email);
 
         if (!$user) {
             $userId = $this->userModel->create([
                 'name'          => $name,
-                'email'         => $email ?: null,
-                'phone'         => $phone ?: null,
+                'email'         => $email,
                 'password_hash' => password_hash($password, PASSWORD_BCRYPT),
             ]);
             $user = $this->userModel->findById($userId);

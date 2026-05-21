@@ -21,7 +21,6 @@ use App\Models\User;
 use App\Services\EmailService;
 use App\Services\JwtService;
 use App\Services\ScoringService;
-use App\Services\SmsService;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
@@ -69,15 +68,6 @@ return [
         );
     },
 
-    SmsService::class => function (ContainerInterface $c) {
-        return new SmsService(
-            $_ENV['TWILIO_SID'] ?? '',
-            $_ENV['TWILIO_TOKEN'] ?? '',
-            $_ENV['TWILIO_FROM'] ?? '',
-            $c->get(LoggerInterface::class)
-        );
-    },
-
     ScoringService::class => function (ContainerInterface $c) {
         return new ScoringService(
             $c->get(Bet::class),
@@ -118,8 +108,7 @@ return [
         $c->get(PoolMember::class),
         $c->get(PoolRule::class),
         $c->get(User::class),
-        $c->get(EmailService::class),
-        $c->get(SmsService::class)
+        $c->get(EmailService::class)
     ),
     BetController::class => fn(ContainerInterface $c) => new BetController(
         $c->get(Bet::class),
