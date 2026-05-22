@@ -11,10 +11,7 @@ deny from all
   # RewriteBase /
   RewriteRule ^$ public/ [L]
   RewriteRule (.*) public/$1 [L]
-</IfModule>
-
-# Preserve Authorization header for PHP (works independently of mod_rewrite)
-SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+  RewriteRule .* - [env=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
   # Redirect to HTTPS
   # RewriteEngine On
