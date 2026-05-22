@@ -20,6 +20,14 @@ class AuthMiddleware implements MiddlewareInterface
     {
         $authHeader = $request->getHeaderLine('Authorization');
 
+        // Apache's SetEnvIf puts the header into $_SERVER['HTTP_AUTHORIZATION']
+        // rather than forwarding it as an HTTP header, so fall back to $_SERVER.
+        if (empty($authHeader)) {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION']
+                ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+                ?? '';
+        }
+
         if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {
             return $this->unauthorizedResponse('Token de autenticação não fornecido.');
         }
