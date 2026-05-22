@@ -8,7 +8,10 @@ class Pool extends BaseModel
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare(
-            'SELECT p.*, u.name as creator_name FROM pools p
+            'SELECT p.*, u.name as creator_name,
+                (SELECT COUNT(*) FROM pool_members WHERE pool_id = p.id AND quota_paid = 1) as paid_count,
+                (SELECT COUNT(*) FROM pool_members WHERE pool_id = p.id AND quota_paid = 1) * p.quota_value as total_prize
+             FROM pools p
              JOIN users u ON u.id = p.creator_id
              WHERE p.id = ?'
         );
@@ -27,7 +30,9 @@ class Pool extends BaseModel
     {
         $stmt = $this->db->prepare(
             'SELECT DISTINCT p.*, u.name as creator_name,
-                (SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = p.id) as member_count
+                (SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = p.id) as member_count,
+                (SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = p.id AND pm.quota_paid = 1) as paid_count,
+                (SELECT COUNT(*) FROM pool_members pm WHERE pm.pool_id = p.id AND pm.quota_paid = 1) * p.quota_value as total_prize
              FROM pools p
              JOIN users u ON u.id = p.creator_id
              LEFT JOIN pool_members pm2 ON pm2.pool_id = p.id AND pm2.user_id = ?

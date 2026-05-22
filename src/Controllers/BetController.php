@@ -108,9 +108,14 @@ class BetController
             }
         }
 
-        // Default: close bets at match start
-        if (!$setting && strtotime($match['match_date']) <= $now) {
-            return $this->error($response, 'As apostas para este jogo já foram encerradas.', 400);
+        // Default: close bets 24 hours before match start (match_date is stored in Brasília time, UTC-3)
+        if (!$setting || !$setting['betting_close_at']) {
+            $matchDate = new \DateTimeImmutable($match['match_date'], new \DateTimeZone('America/Sao_Paulo'));
+            $deadline  = $matchDate->modify('-24 hours');
+            $nowDt     = new \DateTimeImmutable('now', new \DateTimeZone('America/Sao_Paulo'));
+            if ($nowDt >= $deadline) {
+                return $this->error($response, 'Apostas encerradas. As apostas devem ser realizadas com pelo menos 24h de antecedência.', 400);
+            }
         }
 
         // Accept both `home_score`/`away_score` and frontend `home_score_bet`/`away_score_bet`

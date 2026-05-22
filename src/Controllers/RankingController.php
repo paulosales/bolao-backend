@@ -105,11 +105,30 @@ class RankingController
         $isFinished = $this->poolModel->isFinished($poolId);
         $champion   = $isFinished && !empty($ranking) ? $ranking[0] : null;
 
+        // Compute prize distribution from paid quotas
+        $paidCount  = $this->memberModel->countPaid($poolId);
+        $quotaValue = (float)($pool['quota_value'] ?? 0);
+        $totalPrize = $paidCount * $quotaValue;
+
+        $pct1 = (int)(($rules['prize_pct_1st'] ?? 60));
+        $pct2 = (int)(($rules['prize_pct_2nd'] ?? 30));
+        $pct3 = (int)(($rules['prize_pct_3rd'] ?? 10));
+
+        $prizes = [
+            'total'  => $totalPrize,
+            'first'  => round($totalPrize * $pct1 / 100, 2),
+            'second' => round($totalPrize * $pct2 / 100, 2),
+            'third'  => round($totalPrize * $pct3 / 100, 2),
+            'pct_1st' => $pct1,
+            'pct_2nd' => $pct2,
+            'pct_3rd' => $pct3,
+        ];
+
         return $this->json($response, [
             'ranking'    => $ranking,
             'is_finished' => $isFinished,
             'champion'   => $champion,
-            'prize'      => $pool['estimated_prize'],
+            'prizes'     => $prizes,
         ]);
     }
 

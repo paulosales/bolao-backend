@@ -52,6 +52,7 @@ return function (App $app) {
         $group->delete('/pools/{id}', [PoolController::class, 'delete']);
         $group->get('/pools/{id}/members', [PoolController::class, 'members']);
         $group->delete('/pools/{id}/members/{userId}', [PoolController::class, 'removeMember']);
+        $group->put('/pools/{id}/members/{userId}/paid', [PoolController::class, 'setMemberPaid']);
 
         // Pool match settings
         $group->get('/pools/{id}/match-settings', [PoolController::class, 'matchSettings']);

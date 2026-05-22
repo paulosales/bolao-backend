@@ -51,6 +51,23 @@ class PoolMember extends BaseModel
         return $stmt->execute([$poolId, $userId]);
     }
 
+    public function setPaid(int $poolId, int $userId, bool $paid): bool
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE pool_members SET quota_paid = ? WHERE pool_id = ? AND user_id = ?'
+        );
+        return $stmt->execute([$paid ? 1 : 0, $poolId, $userId]);
+    }
+
+    public function countPaid(int $poolId): int
+    {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM pool_members WHERE pool_id = ? AND quota_paid = 1'
+        );
+        $stmt->execute([$poolId]);
+        return (int) $stmt->fetchColumn();
+    }
+
     public function count(int $poolId): int
     {
         $stmt = $this->db->prepare('SELECT COUNT(*) FROM pool_members WHERE pool_id = ?');

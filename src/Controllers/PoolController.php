@@ -190,6 +190,28 @@ class PoolController
         return $this->json($response, ['message' => 'Configuração atualizada.']);
     }
 
+    public function setMemberPaid(Request $request, Response $response, array $args): Response
+    {
+        $userId       = (int) $request->getAttribute('auth_user_id');
+        $poolId       = (int) $args['id'];
+        $targetUserId = (int) $args['userId'];
+
+        $pool = $this->poolModel->findById($poolId);
+        if (!$pool || (int)$pool['creator_id'] !== $userId) {
+            return $this->error($response, 'Apenas o criador pode marcar pagamentos.', 403);
+        }
+
+        if (!$this->memberModel->find($poolId, $targetUserId)) {
+            return $this->error($response, 'Participante não encontrado.', 404);
+        }
+
+        $data = (array) $request->getParsedBody();
+        $paid = (bool)($data['quota_paid'] ?? false);
+
+        $this->memberModel->setPaid($poolId, $targetUserId, $paid);
+        return $this->json($response, ['message' => 'Pagamento atualizado.']);
+    }
+
     private function json(Response $response, mixed $data, int $status = 200): Response
     {
         $response->getBody()->write(json_encode($data, JSON_UNESCAPED_UNICODE));

@@ -71,6 +71,9 @@ CREATE TABLE IF NOT EXISTS pool_rules (
     draw_points              TINYINT UNSIGNED NOT NULL DEFAULT 3,
     goal_difference_points   TINYINT UNSIGNED NOT NULL DEFAULT 2,
     winner_points            TINYINT UNSIGNED NOT NULL DEFAULT 3,
+    prize_pct_1st            TINYINT UNSIGNED NOT NULL DEFAULT 60,
+    prize_pct_2nd            TINYINT UNSIGNED NOT NULL DEFAULT 30,
+    prize_pct_3rd            TINYINT UNSIGNED NOT NULL DEFAULT 10,
     description              TEXT             NULL,
     UNIQUE KEY uq_rules_pool (pool_id),
     CONSTRAINT fk_rules_pool FOREIGN KEY (pool_id) REFERENCES pools(id) ON DELETE CASCADE
@@ -82,6 +85,7 @@ CREATE TABLE IF NOT EXISTS pool_members (
     pool_id         INT UNSIGNED    NOT NULL,
     user_id         INT UNSIGNED    NOT NULL,
     accepted_rules  TINYINT(1)      NOT NULL DEFAULT 0,
+    quota_paid      TINYINT(1)      NOT NULL DEFAULT 0,
     joined_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_member (pool_id, user_id),
     CONSTRAINT fk_member_pool FOREIGN KEY (pool_id) REFERENCES pools(id) ON DELETE CASCADE,

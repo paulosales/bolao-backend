@@ -15,8 +15,8 @@ class PoolRule extends BaseModel
     public function createDefault(int $poolId): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO pool_rules (pool_id, exact_score_points, one_team_score_points, draw_points, goal_difference_points, winner_points)
-             VALUES (?, 10, 5, 3, 2, 3)'
+            'INSERT INTO pool_rules (pool_id, exact_score_points, one_team_score_points, draw_points, goal_difference_points, winner_points, prize_pct_1st, prize_pct_2nd, prize_pct_3rd)
+             VALUES (?, 10, 5, 3, 2, 3, 60, 30, 10)'
         );
         $stmt->execute([$poolId]);
         return (int) $this->db->lastInsertId();
@@ -31,6 +31,9 @@ class PoolRule extends BaseModel
              draw_points = ?,
              goal_difference_points = ?,
              winner_points = ?,
+             prize_pct_1st = ?,
+             prize_pct_2nd = ?,
+             prize_pct_3rd = ?,
              description = ?
              WHERE pool_id = ?'
         );
@@ -40,6 +43,9 @@ class PoolRule extends BaseModel
             $data['draw_points'],
             $data['goal_difference_points'],
             $data['winner_points'],
+            $data['prize_pct_1st'],
+            $data['prize_pct_2nd'],
+            $data['prize_pct_3rd'],
             $data['description'] ?? null,
             $poolId,
         ]);
