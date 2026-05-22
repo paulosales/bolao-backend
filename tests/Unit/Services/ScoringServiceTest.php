@@ -27,6 +27,7 @@ class ScoringServiceTest extends TestCase
             'one_team_score_points'  => 5,
             'draw_points'            => 3,
             'goal_difference_points' => 2,
+            'winner_points'          => 3,
         ];
     }
 
@@ -67,6 +68,26 @@ class ScoringServiceTest extends TestCase
         $this->assertSame(5, $this->service->computePoints(1, 1, 2, 1, $this->rules));
     }
 
+    // ── Winner team ───────────────────────────────────────────────────────────
+
+    public function testWinnerPointsHomeWin(): void
+    {
+        // Home wins in both, but no score or goal-diff match → winner_points
+        $this->assertSame(3, $this->service->computePoints(1, 0, 3, 1, $this->rules));
+    }
+
+    public function testWinnerPointsAwayWin(): void
+    {
+        // Away wins in both, but no score or goal-diff match → winner_points
+        $this->assertSame(3, $this->service->computePoints(0, 2, 1, 3, $this->rules));
+    }
+
+    public function testOneTeamScoreBeatsWinner(): void
+    {
+        // Home score matches (2==2) AND correct winner → one_team_score_points is higher
+        $this->assertSame(5, $this->service->computePoints(2, 0, 2, 1, $this->rules));
+    }
+
     // ── One team score correct ────────────────────────────────────────────────
 
     public function testHomeScoreCorrect(): void
@@ -77,7 +98,7 @@ class ScoringServiceTest extends TestCase
 
     public function testAwayScoreCorrect(): void
     {
-        // Away score matches (1==1), home does not (0 vs 2)
+        // Away score matches (1==1), home does not (0 vs 2); winner differs → one_team_score wins
         $this->assertSame(5, $this->service->computePoints(0, 1, 2, 1, $this->rules));
     }
 
@@ -85,27 +106,37 @@ class ScoringServiceTest extends TestCase
 
     public function testGoalDifferenceCorrect(): void
     {
-        // Both diffs are +2 (2-0 and 3-1), no team score match
-        $this->assertSame(2, $this->service->computePoints(2, 0, 3, 1, $this->rules));
+        // Both diffs are +2 (2-0 and 3-1); winner also matches → winner_points (3) > goal_diff (2)
+        // Use winner_points=0 to isolate goal_difference behaviour
+        $rules = array_merge($this->rules, ['winner_points' => 0]);
+        $this->assertSame(2, $this->service->computePoints(2, 0, 3, 1, $rules));
     }
 
     public function testNegativeGoalDifferenceCorrect(): void
     {
-        // Both diffs are -1 (1-2 and 0-1), no team score match
-        $this->assertSame(2, $this->service->computePoints(1, 2, 0, 1, $this->rules));
+        // Both diffs are -1 (1-2 and 0-1); winner also matches → isolate goal_diff
+        $rules = array_merge($this->rules, ['winner_points' => 0]);
+        $this->assertSame(2, $this->service->computePoints(1, 2, 0, 1, $rules));
+    }
+
+    public function testGoalDifferenceBeatsWinnerWhenHigher(): void
+    {
+        // goal_difference_points > winner_points → goal_diff wins
+        $rules = array_merge($this->rules, ['goal_difference_points' => 4, 'winner_points' => 2]);
+        $this->assertSame(4, $this->service->computePoints(2, 0, 3, 1, $rules));
     }
 
     // ── No points ────────────────────────────────────────────────────────────
 
     public function testNoMatchReturnsZero(): void
     {
-        // home: 1≠0, away: 0≠3, diff: +1 vs -3 → 0
+        // home: 1≠0, away: 0≠3, diff: +1 vs -3, winner: home vs away → 0
         $this->assertSame(0, $this->service->computePoints(1, 0, 0, 3, $this->rules));
     }
 
     public function testWrongSideWinnerReturnsZero(): void
     {
-        // Bet: home wins (3-1), actual: away wins (1-3) → no match
+        // Bet: home wins (3-1), actual: away wins (1-3) → no match at all
         $this->assertSame(0, $this->service->computePoints(3, 1, 1, 3, $this->rules));
     }
 
@@ -113,11 +144,13 @@ class ScoringServiceTest extends TestCase
 
     public function testCustomRulePointsAreApplied(): void
     {
+        // winner_points (3) < goal_difference_points (4) so goal_diff wins that case
         $custom = [
             'exact_score_points'     => 20,
             'one_team_score_points'  => 8,
             'draw_points'            => 6,
             'goal_difference_points' => 4,
+            'winner_points'          => 3,
         ];
 
         $this->assertSame(20, $this->service->computePoints(2, 1, 2, 1, $custom));

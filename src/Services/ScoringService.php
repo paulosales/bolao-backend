@@ -53,27 +53,34 @@ class ScoringService
         int $actualAway,
         array $rules
     ): int {
-        // Exact score: exclusive — no other criteria apply
+        // Collect every criterion the bettor satisfies, then award only the highest.
+        $candidates = [];
+
+        // Exact score
         if ($betHome === $actualHome && $betAway === $actualAway) {
-            return (int)$rules['exact_score_points'];
+            $candidates[] = (int)$rules['exact_score_points'];
         }
 
-        // Correct draw: exclusive — no other criteria apply
+        // Correct draw result (bet is a draw AND result is a draw)
         if ($betHome === $betAway && $actualHome === $actualAway) {
-            return (int)$rules['draw_points'];
+            $candidates[] = (int)$rules['draw_points'];
         }
 
-        // Partial criteria (only reached when neither exact score nor correct draw)
-        $points = 0;
+        // Correct winner team (home win / away win / draw outcome)
+        if (($betHome <=> $betAway) === ($actualHome <=> $actualAway)) {
+            $candidates[] = (int)$rules['winner_points'];
+        }
 
+        // One team's score correct
         if ($betHome === $actualHome || $betAway === $actualAway) {
-            $points += (int)$rules['one_team_score_points'];
+            $candidates[] = (int)$rules['one_team_score_points'];
         }
 
+        // Correct goal difference
         if (($betHome - $betAway) === ($actualHome - $actualAway)) {
-            $points += (int)$rules['goal_difference_points'];
+            $candidates[] = (int)$rules['goal_difference_points'];
         }
 
-        return $points;
+        return empty($candidates) ? 0 : max($candidates);
     }
 }

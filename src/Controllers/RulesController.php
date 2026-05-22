@@ -45,7 +45,7 @@ class RulesController
         }
 
         $data = (array) $request->getParsedBody();
-        $required = ['exact_score_points', 'one_team_score_points', 'draw_points', 'goal_difference_points'];
+        $required = ['exact_score_points', 'one_team_score_points', 'draw_points', 'goal_difference_points', 'winner_points'];
         foreach ($required as $field) {
             if (!isset($data[$field]) || !is_numeric($data[$field]) || (int)$data[$field] < 0) {
                 return $this->error($response, "Campo {$field} inválido.", 422);
@@ -57,6 +57,7 @@ class RulesController
             'one_team_score_points'   => (int)$data['one_team_score_points'],
             'draw_points'             => (int)$data['draw_points'],
             'goal_difference_points'  => (int)$data['goal_difference_points'],
+            'winner_points'           => (int)$data['winner_points'],
             'description'             => isset($data['description']) && $data['description'] !== '' ? (string)$data['description'] : null,
         ]);
 
