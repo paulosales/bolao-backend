@@ -20,12 +20,21 @@ class AuthMiddleware implements MiddlewareInterface
     {
         $authHeader = $request->getHeaderLine('Authorization');
 
-        // Apache's SetEnvIf puts the header into $_SERVER['HTTP_AUTHORIZATION']
-        // rather than forwarding it as an HTTP header, so fall back to $_SERVER.
+        // Apache's various modes put the header in different places.
+        // Try every known fallback in order of specificity.
         if (empty($authHeader)) {
             $authHeader = $_SERVER['HTTP_AUTHORIZATION']
                 ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
                 ?? '';
+        }
+        // Some FastCGI setups expose it via getenv
+        if (empty($authHeader)) {
+            $authHeader = getenv('HTTP_AUTHORIZATION') ?: (getenv('REDIRECT_HTTP_AUTHORIZATION') ?: '');
+        }
+        // mod_php exposes apache_request_headers()
+        if (empty($authHeader) && function_exists('apache_request_headers')) {
+            $headers = apache_request_headers();
+            $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
         }
 
         if (empty($authHeader) || !str_starts_with($authHeader, 'Bearer ')) {

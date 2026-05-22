@@ -8,17 +8,28 @@ deny from all
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Must come first, with no [L] flag, so it runs on every request
-  # before the routing rules stop processing.
+  # Preserve the Authorization header through all rewrites.
+  # SetEnvIf is more reliable than RewriteRule-based env vars on many Apache setups.
+  SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+  # Also set via RewriteRule as a fallback for CGI/FastCGI setups
   RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+  # On Apache 2.4.13+, pass the Authorization header directly to the script
+  <IfModule mod_cgi.c>
+    CGIPassAuth On
+  </IfModule>
+
   # Redirect to the public folder
-  # RewriteBase /
   RewriteRule ^$ public/ [L]
   RewriteRule (.*) public/$1 [L]
+</IfModule>
 
-  # Redirect to HTTPS
-  # RewriteEngine On
-  # RewriteCond %{HTTPS} off
-  # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# Prevent caching of API responses at the Apache level
+<IfModule mod_headers.c>
+  <If "%{REQUEST_URI} =~ m#^/api/#">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </If>
 </IfModule>

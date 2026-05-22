@@ -1,7 +1,12 @@
 RewriteEngine On
 
-# Re-set Authorization env var here so Apache's REDIRECT_ renaming doesn't lose it
+# Preserve the Authorization header — use both methods for maximum compatibility
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# If the root .htaccess rewrite renamed it, recover it
+RewriteCond %{ENV:REDIRECT_HTTP_AUTHORIZATION} .+
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{ENV:REDIRECT_HTTP_AUTHORIZATION}]
 
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
