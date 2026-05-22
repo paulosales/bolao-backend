@@ -14,3 +14,4 @@ tmp/
 .vscode/
 .idea/
 .DS_Store
+.cache
