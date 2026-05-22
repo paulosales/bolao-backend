@@ -6,12 +6,16 @@ deny from all
 </Files>
 
 <IfModule mod_rewrite.c>
-  # Redirect to the public folder
   RewriteEngine On
+
+  # Must come first, with no [L] flag, so it runs on every request
+  # before the routing rules stop processing.
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Redirect to the public folder
   # RewriteBase /
   RewriteRule ^$ public/ [L]
   RewriteRule (.*) public/$1 [L]
-  RewriteRule .* - [env=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
   # Redirect to HTTPS
   # RewriteEngine On
