@@ -24,6 +24,8 @@ return function (App $app) {
         $group->post('/auth/register', [AuthController::class, 'register']);
         $group->post('/auth/login', [AuthController::class, 'login']);
         $group->post('/auth/refresh', [AuthController::class, 'refresh']);
+        $group->post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+        $group->post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
         // Invitations (public - for accepting)
         $group->get('/invitations/{token}', [InvitationController::class, 'show']);

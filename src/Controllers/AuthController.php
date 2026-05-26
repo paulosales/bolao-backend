@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\User;
+use App\Services\EmailService;
 use App\Services\JwtService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -12,7 +13,8 @@ class AuthController
 {
     public function __construct(
         private User $userModel,
-        private JwtService $jwtService
+        private JwtService $jwtService,
+        private EmailService $emailService
     ) {
     }
 
@@ -134,6 +136,59 @@ class AuthController
         }
         $newToken = $this->jwtService->encode((int)$payload->sub);
         return $this->json($response, ['token' => $newToken]);
+    }
+
+    public function forgotPassword(Request $request, Response $response): Response
+    {
+        $data  = (array) $request->getParsedBody();
+        $email = trim(strtolower($data['email'] ?? ''));
+
+        if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->error($response, 'E-mail inválido.', 422);
+        }
+
+        $user = $this->userModel->findByEmail($email);
+        if (!$user) {
+            return $this->error($response, 'Nenhuma conta encontrada com este e-mail.', 404);
+        }
+
+        $token     = bin2hex(random_bytes(32));
+        $expiresAt = date('Y-m-d H:i:s', time() + 3600); // 1 hour
+
+        $this->userModel->saveResetToken((int)$user['id'], $token, $expiresAt);
+
+        $frontendUrl = rtrim($_ENV['APP_URL'] ?? 'http://localhost:5173', '/');
+        $resetLink   = "{$frontendUrl}/reset-password/{$token}";
+
+        $this->emailService->sendPasswordReset($user['email'], $user['name'], $resetLink);
+
+        return $this->json($response, ['message' => 'E-mail de redefinição enviado.']);
+    }
+
+    public function resetPassword(Request $request, Response $response): Response
+    {
+        $data     = (array) $request->getParsedBody();
+        $token    = trim($data['token'] ?? '');
+        $password = $data['password'] ?? '';
+
+        if (empty($token) || empty($password)) {
+            return $this->error($response, 'Token e nova senha são obrigatórios.', 422);
+        }
+        if (strlen($password) < 6) {
+            return $this->error($response, 'A senha deve ter pelo menos 6 caracteres.', 422);
+        }
+
+        $record = $this->userModel->findByResetToken($token);
+        if (!$record) {
+            return $this->error($response, 'Token inválido ou expirado.', 400);
+        }
+
+        $this->userModel->update((int)$record['user_id'], [
+            'password_hash' => password_hash($password, PASSWORD_BCRYPT),
+        ]);
+        $this->userModel->deleteResetToken($token);
+
+        return $this->json($response, ['message' => 'Senha redefinida com sucesso.']);
     }
 
     private function json(Response $response, mixed $data, int $status = 200): Response

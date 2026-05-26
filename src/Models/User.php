@@ -78,4 +78,41 @@ class User extends BaseModel
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($values);
     }
+
+    // ── Password reset tokens ──────────────────────────────────────────────
+
+    public function saveResetToken(int $userId, string $token, string $expiresAt): bool
+    {
+        // Remove any existing tokens for this user first
+        $this->deleteResetTokensByUser($userId);
+
+        $stmt = $this->db->prepare(
+            'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)'
+        );
+        return $stmt->execute([$userId, $token, $expiresAt]);
+    }
+
+    public function findByResetToken(string $token): ?array
+    {
+        $stmt = $this->db->prepare(
+            'SELECT prt.*, u.id AS user_id, u.name, u.email
+             FROM password_reset_tokens prt
+             JOIN users u ON u.id = prt.user_id
+             WHERE prt.token = ? AND prt.expires_at > NOW()'
+        );
+        $stmt->execute([$token]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public function deleteResetTokensByUser(int $userId): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM password_reset_tokens WHERE user_id = ?');
+        return $stmt->execute([$userId]);
+    }
+
+    public function deleteResetToken(string $token): bool
+    {
+        $stmt = $this->db->prepare('DELETE FROM password_reset_tokens WHERE token = ?');
+        return $stmt->execute([$token]);
+    }
 }

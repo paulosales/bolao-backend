@@ -93,7 +93,8 @@ return [
     // Controllers
     AuthController::class => fn(ContainerInterface $c) => new AuthController(
         $c->get(User::class),
-        $c->get(JwtService::class)
+        $c->get(JwtService::class),
+        $c->get(EmailService::class)
     ),
     PoolController::class => fn(ContainerInterface $c) => new PoolController(
         $c->get(Pool::class),
